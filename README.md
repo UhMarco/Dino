@@ -1,4 +1,4 @@
-# Dino
+# Dino 🦕
 The no internet dinosaur game made in Pygame.
 
 ![Image](https://github.com/UhMarco/Dino/blob/main/assets/GitHub/gameplay.gif)
