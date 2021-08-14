@@ -30,7 +30,7 @@ BOLD_FONT = pygame.font.Font(os.path.join(
 FLOOR = pygame.Rect(0, PLAYER_HEIGHT, WIDTH, 5)
 
 
-class Player:
+class Dinosaur:
     def __init__(self, x, y, state='idle'):
         self.state = state
 
@@ -56,7 +56,7 @@ class Player:
     def jump(self):
         if self.jumping == False:
             self.jumping = True
-            self.gravity = -18
+            self.gravity = -14
 
     def animate(self):
         if ((pygame.time.get_ticks() - self.last_frame) / 1000 > 0.15):
@@ -70,7 +70,7 @@ class Player:
         self.animate()
 
         if self.jumping:
-            self.gravity += 1
+            self.gravity += 0.9
             self.rect.y += self.gravity
             if self.rect.bottom > FLOOR.top:
                 self.rect.bottom = FLOOR.top
@@ -104,7 +104,6 @@ class Cactus(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y - self.get_height() + 5
         self.speed = 5
-        self.dead = False
 
     def move(self):
         self.rect.x -= self.speed
@@ -122,8 +121,52 @@ class Cactus(pygame.sprite.Sprite):
         return self.image.get_height()
 
 
-player = Player(75, PLAYER_HEIGHT)
+class Bird(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        path = os.path.join('assets', 'obstacles', 'bird')
+        self.animations = []
+        for i in range(len(os.listdir(path))):
+            img = pygame.image.load(os.path.join(
+                'assets', 'obstacles', 'bird', f'bird{i}.png'))
+            self.animations.append(pygame.transform.scale(
+                img, (int(img.get_width() * 0.7), int(img.get_height() * 0.7))))
+        self.image = self.animations[0]
+        self.animation_index = 0
+        self.last_frame = pygame.time.get_ticks()
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.speed = 7
+
+    def move(self):
+        self.rect.x -= self.speed
+        if ((pygame.time.get_ticks() - self.last_frame) / 1000 > 0.15):
+            self.last_frame = pygame.time.get_ticks()
+            if self.animation_index == 0:
+                self.animation_index = 1
+                self.rect.y -= 7
+            else:
+                self.animation_index = 0
+                self.rect.y += 7
+            self.image = self.animations[self.animation_index]
+
+    def draw(self):
+        SCREEN.blit(self.image, (self.rect.x, self.rect.y))
+
+    def off_screen(self):
+        return self.rect.x < -50
+
+    def get_width(self):
+        return self.image.get_width()
+
+    def get_height(self):
+        return self.image.get_height()
+
+
+player = Dinosaur(75, PLAYER_HEIGHT)
 cacti = []
+birds = []
 fading = False
 alpha = 0
 restart_button = Button(
@@ -138,6 +181,9 @@ def main():
     for i in range(10):
         cacti.append(Cactus(random.randint(
             cacti[-1].rect.x + 300, cacti[-1].rect.x + 1000), PLAYER_HEIGHT))
+
+    birds.append(
+        Bird(random.randint(WIDTH + 5000, WIDTH + 7000), PLAYER_HEIGHT - random.randint(100, 200)))
 
     lost = False
     run = True
@@ -177,10 +223,27 @@ def main():
             if cactus.off_screen():
                 cactus.kill()
                 cacti.remove(cactus)
+                if random.randint(0, 100) > 5:
+                    birds.append(Bird(random.randint(
+                        birds[-1].rect.x + 5000, birds[-1].rect.x + 7000), PLAYER_HEIGHT - random.randint(100, 200)))
+
                 cacti.append(Cactus(random.randint(
                     cacti[-1].rect.x + 300, cacti[-1].rect.x + 1000), PLAYER_HEIGHT))
 
             elif cactus.rect.colliderect(player.rect) and not(lost):
+                lost = True
+                player.set_state('dead')
+                screen_shake = 20
+
+        for bird in birds:
+            if not(lost):
+                bird.move()
+            bird.draw()
+            if bird.off_screen():
+                bird.kill()
+                birds.remove(bird)
+
+            elif bird.rect.colliderect(player.rect) and not(lost):
                 lost = True
                 player.set_state('dead')
                 screen_shake = 20
@@ -201,6 +264,9 @@ def main():
                     for cactus in cacti:
                         cactus.kill()
                     cacti.clear()
+                    for bird in birds:
+                        bird.kill()
+                    birds.clear()
                     start()
 
         WIN.blit(SCREEN, render_offset)
@@ -232,7 +298,7 @@ def start():
         player.draw()
 
         main_text = BOLD_FONT.render(
-            'Press SPACE to start...', False, TEXT_COLOUR)
+            'Press SPACE to jump...', False, TEXT_COLOUR)
         SCREEN.blit(main_text, (WIDTH / 2 - main_text.get_width() /
                     2, HEIGHT / 2 - main_text.get_height() / 2 - 20))
 
