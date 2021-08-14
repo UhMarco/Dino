@@ -150,8 +150,15 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     run = False
-                if event.key == pygame.K_SPACE and not(lost):
-                    player.jump()
+                if event.key == pygame.K_SPACE:
+                    if lost:
+                        fade = pygame.Surface((WIDTH, HEIGHT))
+                        fade.fill(BG)
+                        fade.set_alpha(alpha)
+                        SCREEN.blit(fade, (0, 0))
+                        alpha += 10
+                    else:
+                        player.jump()
 
         render_offset = [0, 0]
         if screen_shake > 0:
