@@ -70,7 +70,7 @@ class Dinosaur:
         self.animate()
 
         if self.jumping:
-            self.gravity += 0.9
+            self.gravity += 0.85
             self.rect.y += self.gravity
             if self.rect.bottom > FLOOR.top:
                 self.rect.bottom = FLOOR.top
